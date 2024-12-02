@@ -3,7 +3,7 @@ const axios = require('axios')
 const { Op } = require('sequelize')
 
 class BlogDetailService {
-  static async getBlogDetail(accessToken, blog_id) {
+  static async getBlogDetail(user_id, blog_id) {
     try {
       const blog = await models.Blog.findByPk(blog_id)
 
@@ -250,7 +250,7 @@ class BlogDetailService {
     }
   }
 
-  static async getBlogPreview(accessToken, slug) {
+  static async getBlogPreview(user_id, slug) {
     try {
       const blog = await models.Blog.findOne({
         where: { [Op.or]: [{ slug_th: slug }, { slug_en: slug }] },

@@ -4,13 +4,13 @@ const ResponseHandle = require('../utils/responseHandle')
 class BlogDetailController {
   static async getBlogDetail(req, res) {
     try {
-      const accessToken = req.accessToken
+      const user_id = req.user.userId
       const { blog_id } = req.params
-      if ((!blog_id, !accessToken)) {
+      if ((!blog_id, !user_id)) {
         return ResponseHandle.error(res, 400, 'Blog ID and Access Token is required')
       }
 
-      const result = await BlogDetailService.getBlogDetail(accessToken, blog_id)
+      const result = await BlogDetailService.getBlogDetail(user_id, blog_id)
       ResponseHandle.success(res, result, 'Blog detail retrieved successfully')
     } catch (error) {
       ResponseHandle.error(
@@ -176,7 +176,7 @@ class BlogDetailController {
   static async getBlogPreview(req, res) {
     try {
       const { slug } = req.params
-      const accessToken = req.accessToken
+      const user_id = req.user.userId
 
       if (!slug) {
         return res.status(400).json({
@@ -184,7 +184,7 @@ class BlogDetailController {
         })
       }
 
-      const result = await BlogDetailService.getBlogPreview(accessToken, slug)
+      const result = await BlogDetailService.getBlogPreview(user_id, slug)
       ResponseHandle.success(res, result, 'Blog preview retrieved successfully')
     } catch (error) {
       ResponseHandle.error(
