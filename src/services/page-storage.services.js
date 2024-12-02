@@ -1,9 +1,22 @@
+const fs = require('fs')
+const path = require('path')
+const sharp = require('sharp')
+const { v4: uuidv4 } = require('uuid')
 const { models } = require('../models')
 const { Op } = require('sequelize')
-const axios = require('axios')
-const FormData = require('form-data')
 
 class PageStorageService {
+  static deleteEmptyDirectories(dir) {
+    if (fs.existsSync(dir)) {
+      const files = fs.readdirSync(dir)
+      if (files.length === 0) {
+        fs.rmdirSync(dir)
+        const parentDir = path.dirname(dir)
+        this.deleteEmptyDirectories(parentDir)
+      }
+    }
+  }
+
   static async getPageStorage(page = 1, pageSize = 10, search = '') {
     try {
       const offset = (page - 1) * pageSize
@@ -31,28 +44,96 @@ class PageStorageService {
     let uploadedImageId = null
 
     try {
-      const response = await this.callPageStorageSingleUpload(req, accessToken)
+      const { userId } = req.user
+      const { file: imageFile } = req
+      const { image_name: imageName } = req.body
 
-      if (response.status !== 'success') {
-        throw new Error('Failed to upload image to storage provider')
+      const response = await this._uploadImage(imageFile, imageName, userId)
+
+      if (!response) {
+        const error = new Error('Failed to upload image to storage provider')
+        error.status = 404
+        throw error
       }
 
-      uploadedImageId = response.data.image_id
+      uploadedImageId = response.image_id
 
-      const originalName = response.data.image_original_name
+      const originalName = response.image_original_name
       const imageNameWithoutExtension = originalName.split('.').slice(0, -1).join('.')
 
       const imageData = {
         image_id: uploadedImageId,
-        image_url: response.data.image_url,
+        image_url: response.image_url,
         image_name: imageNameWithoutExtension,
       }
       const imagePage = await models.PageImgStorage.create(imageData)
       return imagePage
     } catch (error) {
-      if (uploadedImageId) {
-        await this.callPageStorageSingleDelete(uploadedImageId, accessToken)
+      throw error
+    }
+  }
+
+  static async _uploadImage(imageFile, file_name, uploadedBy) {
+    return this._uploadSingleImage(imageFile, file_name, uploadedBy)
+  }
+
+  static async uploadMultipleImages(imageFiles, uploadedBy) {
+    try {
+      const uploadPromises = imageFiles.map((imageFile) =>
+        this._uploadSingleImage(imageFile, uploadedBy)
+      )
+      const uploadedImages = await Promise.all(uploadPromises)
+      return uploadedImages
+    } catch (error) {
+      throw error
+    }
+  }
+
+  static async _uploadSingleImage(imageFile, file_name, uploadedBy) {
+    try {
+      const uploadsDir = 'src/uploads'
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true })
       }
+
+      const dir = path.join(uploadsDir, 'page')
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true })
+      }
+
+      const uniqueFileName = uuidv4()
+      const imageName = `${uniqueFileName}.webp`
+      const imagePath = path.join(dir, imageName)
+
+      if (fs.existsSync(imagePath)) {
+        const error = new Error('Image with the same name already exists.')
+        error.status = 409
+        throw error
+      }
+
+      const imageMetadata = await sharp(imageFile.buffer).metadata()
+
+      await sharp(imageFile.buffer)
+        .resize({
+          width: imageMetadata.width,
+          height: imageMetadata.height,
+        })
+        .webp({ quality: 90 })
+        .toFile(imagePath)
+
+      const imageUrl = `/storage/page/${imageName}`
+
+      const newImage = await models.PageStorage.create({
+        image_url: imageUrl,
+        image_path: imagePath,
+        image_original_name: file_name,
+        image_type: imageFile.mimetype,
+        image_size: imageFile.size,
+        upload_by: uploadedBy,
+      })
+
+      return newImage
+    } catch (error) {
       throw error
     }
   }
@@ -73,14 +154,14 @@ class PageStorageService {
     }
   }
 
-  static async deleteImage(id, accessToken) {
+  static async deleteImage(id) {
     try {
       const pageImg = await models.PageImgStorage.findByPk(id)
       if (!pageImg) {
         throw new Error('Page image not found')
       }
 
-      await this.callPageStorageSingleDelete(pageImg.image_id, accessToken)
+      await this._deleteImage(pageImg.image_id)
       await pageImg.destroy()
       return { message: 'Page image deleted successfully' }
     } catch (error) {
@@ -88,42 +169,31 @@ class PageStorageService {
     }
   }
 
-  static async callPageStorageSingleUpload(req, accessToken) {
-    try {
-      const image_file = req.file
-      const { image_name } = req.body
-
-      const formData = new FormData()
-      formData.append('file', image_file.buffer, image_file.originalname)
-      formData.append('file_name', image_name)
-
-      const { data: response } = await axios.post(
-        `${process.env.STORAGE_PROVIDER_URL}/api/page/images/upload`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            ...formData.getHeaders(),
-          },
-        }
-      )
-      return response
-    } catch (error) {
-      throw error
-    }
+  static async _deleteImage(image_id) {
+    return this._deleteSingleImage(image_id)
   }
 
-  static async callPageStorageSingleDelete(image_id, accessToken) {
+  static async _deleteSingleImage(image_id) {
     try {
-      const { data: response } = await axios.delete(
-        `${process.env.STORAGE_PROVIDER_URL}/api/page/images/delete`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          data: { image_id },
-        }
-      )
-      return response
+      const image = await models.PageStorage.findByPk(image_id)
+      if (!image) {
+        const error = new Error('Image not found')
+        error.status = 404
+        throw error
+      }
+
+      const imagePath = image.image_path
+      const dirPath = path.dirname(imagePath)
+
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath)
+      }
+
+      await image.destroy({ force: true })
+
+      this.deleteEmptyDirectories(dirPath)
     } catch (error) {
+      if (!error.status) error.status = 500
       throw error
     }
   }

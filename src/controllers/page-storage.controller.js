@@ -19,7 +19,6 @@ class PageStorageController {
 
   static async createImage(req, res) {
     try {
-      const accessToken = req.accessToken
       const image_file = req.file
       const { image_name } = req.body
 
@@ -27,7 +26,7 @@ class PageStorageController {
         return ResponseHandle.error(res, 400, 'image_file and image_name is required')
       }
 
-      const pageImage = await PageStorageService.createImage(req, accessToken)
+      const pageImage = await PageStorageService.createImage(req)
       ResponseHandle.success(res, pageImage, 'Page image created successfully')
     } catch (error) {
       if (error.status >= 500) {
@@ -55,12 +54,11 @@ class PageStorageController {
 
   static async deleteImage(req, res) {
     try {
-      const accessToken = req.accessToken
       const { id: storage_id } = req.params
       if (!storage_id) {
         return ResponseHandle.error(res, 400, 'storage_id is required')
       }
-      const result = await PageStorageService.deleteImage(storage_id, accessToken)
+      const result = await PageStorageService.deleteImage(storage_id)
       ResponseHandle.success(res, result, 'Image deleted successfully')
     } catch (error) {
       if (error.status >= 500) {

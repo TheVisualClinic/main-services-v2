@@ -1,3 +1,7 @@
+const fs = require('fs')
+const path = require('path')
+const sharp = require('sharp')
+const { v4: uuidv4 } = require('uuid')
 const { models } = require('../models')
 const { Op } = require('sequelize')
 
@@ -5,6 +9,17 @@ const axios = require('axios')
 const FormData = require('form-data')
 
 class BlogStorageService {
+  static deleteEmptyDirectories(dir) {
+    if (fs.existsSync(dir)) {
+      const files = fs.readdirSync(dir)
+      if (files.length === 0) {
+        fs.rmdirSync(dir)
+        const parentDir = path.dirname(dir)
+        this.deleteEmptyDirectories(parentDir)
+      }
+    }
+  }
+
   static async getBlogStorage(page = 1, pageSize = 10, search = '') {
     try {
       const offset = (page - 1) * pageSize
@@ -28,32 +43,79 @@ class BlogStorageService {
     }
   }
 
-  static async createImage(req, accessToken) {
+  static async createImage(req) {
     let uploadedImageId = null
 
     try {
-      const response = await this.callBlogStorageSingleUpload(req, accessToken)
+      const { userId } = req.user
+      const { file: imageFile } = req
+      const { image_name: imageName } = req.body
 
-      if (response.status !== 'success') {
-        throw new Error('Failed to upload image to storage provider')
+      const response = await this._uploadImage(imageFile, imageName, userId)
+
+      if (!response) {
+        const error = new Error('Failed to upload image to storage provider')
+        error.status = 404
+        throw error
       }
 
-      uploadedImageId = response.data.image_id
+      uploadedImageId = response.image_id
 
-      const originalName = response.data.image_original_name
+      const originalName = response.image_original_name
       const imageNameWithoutExtension = originalName.split('.').slice(0, -1).join('.')
 
       const imageData = {
         image_id: uploadedImageId,
-        image_url: response.data.image_url,
+        image_url: response.image_url,
         image_name: imageNameWithoutExtension,
       }
-      const imageBlog = await models.BlogImgStorage.create(imageData)
-      return imageBlog
+      return await models.BlogImgStorage.create(imageData)
     } catch (error) {
-      if (uploadedImageId) {
-        await this.callBlogStorageSingleDelete(uploadedImageId, accessToken)
+      throw error
+    }
+  }
+
+  static async _uploadImage(imageFile, fileName, uploadedBy) {
+    return this._uploadSingleImage(imageFile, fileName, uploadedBy)
+  }
+
+  static async _uploadSingleImage(imageFile, fileName, uploadedBy) {
+    try {
+      const uploadsDir = path.resolve('src/uploads/blog')
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true })
       }
+
+      const uniqueFileName = uuidv4()
+      const imageName = `${uniqueFileName}.webp`
+      const imagePath = path.join(uploadsDir, imageName)
+
+      if (fs.existsSync(imagePath)) {
+        const error = new Error('Image with the same name already exists.')
+        error.status = 409
+        throw error
+      }
+
+      const imageMetadata = await sharp(imageFile.buffer).metadata()
+      await sharp(imageFile.buffer)
+        .resize({
+          width: imageMetadata.width,
+          height: imageMetadata.height,
+        })
+        .webp({ quality: 90 })
+        .toFile(imagePath)
+
+      const imageUrl = `/storage/blog/${imageName}`
+
+      return await models.BlogStorage.create({
+        image_url: imageUrl,
+        image_path: imagePath,
+        image_original_name: fileName,
+        image_type: imageFile.mimetype,
+        image_size: imageFile.size,
+        upload_by: uploadedBy,
+      })
+    } catch (error) {
       throw error
     }
   }
@@ -74,14 +136,14 @@ class BlogStorageService {
     }
   }
 
-  static async deleteImage(id, accessToken) {
+  static async deleteImage(id) {
     try {
       const blogImg = await models.BlogImgStorage.findByPk(id)
       if (!blogImg) {
         throw new Error('Blog image not found')
       }
 
-      await this.callBlogStorageSingleDelete(blogImg.image_id, accessToken)
+      await this._deleteImage(blogImg.image_id)
       await blogImg.destroy()
       return { message: 'Blog image deleted successfully' }
     } catch (error) {
@@ -89,42 +151,31 @@ class BlogStorageService {
     }
   }
 
-  static async callBlogStorageSingleUpload(req, accessToken) {
-    try {
-      const image_file = req.file
-      const { image_name } = req.body
-
-      const formData = new FormData()
-      formData.append('file', image_file.buffer, image_file.originalname)
-      formData.append('file_name', image_name)
-
-      const { data: response } = await axios.post(
-        `${process.env.STORAGE_PROVIDER_URL}/api/blog/images/upload`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            ...formData.getHeaders(),
-          },
-        }
-      )
-      return response
-    } catch (error) {
-      throw error
-    }
+  static async _deleteImage(image_id) {
+    return this._deleteSingleImage(image_id)
   }
 
-  static async callBlogStorageSingleDelete(image_id, accessToken) {
+  static async _deleteSingleImage(image_id) {
     try {
-      const { data: response } = await axios.delete(
-        `${process.env.STORAGE_PROVIDER_URL}/api/blog/images/delete`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          data: { image_id },
-        }
-      )
-      return response
+      const image = await models.BlogStorage.findByPk(image_id)
+      if (!image) {
+        const error = new Error('Image not found')
+        error.status = 404
+        throw error
+      }
+
+      const imagePath = image.image_path
+      const dirPath = path.dirname(imagePath)
+
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath)
+      }
+
+      await image.destroy({ force: true })
+
+      this.deleteEmptyDirectories(dirPath)
     } catch (error) {
+      if (!error.status) error.status = 500
       throw error
     }
   }
