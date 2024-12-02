@@ -36,8 +36,8 @@ router.use('/v1/blog-list', blogListRoutes)
 router.use('/v1/blog-detail', blogDetailRoutes)
 router.use('/v1/blog-content', blogContentRoutes)
 
-const blogStorageRoutes = require('./blog-storage.route')
-router.use('/v1/blog-storage', blogStorageRoutes)
+const blogStorageServiceRoutes = require('./blog-storage.route')
+router.use('/v1/blog-storage', blogStorageServiceRoutes)
 
 const categoryRoutes = require('../routes/category.route')
 const tagRoutes = require('../routes/tag.route')
@@ -69,8 +69,8 @@ router.use('/v1/page-services', pageServicesRoutes)
 router.use('/v1/page-home', pageHomeRoutes)
 router.use('/v1/page-medical-team', pageMedicalTeamRoutes)
 
-const pageStorageRoutes = require('./page-storage.route')
-router.use('/v1/page-storage', pageStorageRoutes)
+const pageStorageServiceRoutes = require('./page-storage.route')
+router.use('/v1/page-storage', pageStorageServiceRoutes)
 
 const BaseAboutSectionRoutes = require('./base-about-section.route')
 const BasePartnerSectionRoutes = require('./base-partner-section.route')

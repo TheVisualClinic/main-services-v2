@@ -1,6 +1,7 @@
 require('./config/loadEnv')
 
 const express = require('express')
+const path = require('path')
 const bodyParser = require('body-parser')
 const swaggerUi = require('swagger-ui-express')
 const specs = require('./config/swagger.config')
