@@ -13,6 +13,12 @@ const Permissions = require('./permissions.model')
 const InviteStaff = require('./inviteStaff.model')
 const OTPHistory = require('./otpHistory.model')
 
+// Storage Model
+const UserAvatars = require('./userAvatar.model')
+const PublicStorage = require('./publicStorage.model')
+const PageStorage = require('./pageStorage.model')
+const BlogStorage = require('./blogStorage.model')
+
 // Main Model
 const Category = require('./category.model')
 const Tag = require('./tag.model')
@@ -269,6 +275,10 @@ module.exports = {
     Permissions,
     InviteStaff,
     OTPHistory,
+    UserAvatars,
+    PublicStorage,
+    PageStorage,
+    BlogStorage,
     Category,
     Tag,
     Blog,
