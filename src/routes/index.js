@@ -1,0 +1,63 @@
+const express = require('express')
+const router = express.Router()
+
+// API Version 1
+const backDoorRoutes = require('./back-door.route')
+router.use('/back-door', backDoorRoutes)
+
+const blogListRoutes = require('./blog-list.route')
+const blogDetailRoutes = require('./blog-detail.route')
+const blogContentRoutes = require('./blog-content.route')
+router.use('/v1/blog-list', blogListRoutes)
+router.use('/v1/blog-detail', blogDetailRoutes)
+router.use('/v1/blog-content', blogContentRoutes)
+
+const blogStorageRoutes = require('./blog-storage.route')
+router.use('/v1/blog-storage', blogStorageRoutes)
+
+const categoryRoutes = require('../routes/category.route')
+const tagRoutes = require('../routes/tag.route')
+router.use('/v1/category', categoryRoutes)
+router.use('/v1/tag', tagRoutes)
+
+const pageServiceListRoutes = require('./page-service-list.route')
+const pageServiceDetailRoutes = require('./page-service-detail.route')
+const pageServiceContentRoutes = require('./page-service-content.route')
+const pageServiceFaqRoutes = require('./page-service-faq.route')
+const pageContactRoutes = require('./page-contact.route')
+const pageBlogsRoutes = require('./page-blogs.route')
+const pageReviewsRoutes = require('./page-reviews.route')
+const pagePromotionsRoutes = require('./page-promotions.route')
+const pageAboutUsRoutes = require('./page-about-us.route')
+const pageServicesRoutes = require('./page-services.route')
+const pageHomeRoutes = require('./page-home.route')
+const pageMedicalTeamRoutes = require('./page-medical-team.route')
+router.use('/v1/page-service-list', pageServiceListRoutes)
+router.use('/v1/page-service-detail', pageServiceDetailRoutes)
+router.use('/v1/page-service-content', pageServiceContentRoutes)
+router.use('/v1/page-service-faq', pageServiceFaqRoutes)
+router.use('/v1/page-contact', pageContactRoutes)
+router.use('/v1/page-blogs', pageBlogsRoutes)
+router.use('/v1/page-reviews', pageReviewsRoutes)
+router.use('/v1/page-promotions', pagePromotionsRoutes)
+router.use('/v1/page-about-us', pageAboutUsRoutes)
+router.use('/v1/page-services', pageServicesRoutes)
+router.use('/v1/page-home', pageHomeRoutes)
+router.use('/v1/page-medical-team', pageMedicalTeamRoutes)
+
+const pageStorageRoutes = require('./page-storage.route')
+router.use('/v1/page-storage', pageStorageRoutes)
+
+const BaseAboutSectionRoutes = require('./base-about-section.route')
+const BasePartnerSectionRoutes = require('./base-partner-section.route')
+const BaseCaptionSectionRoutes = require('./base-caption-section.route')
+const BaseSocialSectionRoutes = require('./base-social-section.route')
+router.use('/v1/base-section-about', BaseAboutSectionRoutes)
+router.use('/v1/base-section-partner', BasePartnerSectionRoutes)
+router.use('/v1/base-section-caption', BaseCaptionSectionRoutes)
+router.use('/v1/base-section-social', BaseSocialSectionRoutes)
+
+const websiteRoutes = require('./website.route')
+router.use('/v1/website', websiteRoutes)
+
+module.exports = router

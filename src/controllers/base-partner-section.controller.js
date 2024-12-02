@@ -1,0 +1,36 @@
+const BasePartnerSectionService = require('../services/base-partner-section.services')
+const ResponseHandle = require('../utils/responseHandle')
+
+class BasePartnerSectionController {
+  static async getSectionDetail(req, res) {
+    try {
+      const result = await BasePartnerSectionService.getSectionDetail()
+      return ResponseHandle.success(res, result, 'Successfully retrieved the section')
+    } catch (error) {
+      return ResponseHandle.error(
+        res,
+        error.status || 500,
+        error.message || 'Internal Server Error'
+      )
+    }
+  }
+
+  static async updateSectionDetail(req, res) {
+    try {
+      const { id } = req.params
+      const updatedData = req.body
+
+      const result = await BasePartnerSectionService.updateSectionDetail(id, updatedData)
+
+      return ResponseHandle.success(res, result, 'Successfully updated the section')
+    } catch (error) {
+      return ResponseHandle.error(
+        res,
+        error.status || 500,
+        error.message || 'Internal Server Error'
+      )
+    }
+  }
+}
+
+module.exports = BasePartnerSectionController
