@@ -18,18 +18,21 @@ const corsOptions = {
   origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Disposition'],
   credentials: true,
 }
 
 app.use(cors(corsOptions))
-logger.info('CORS configuration applied')
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs))
-logger.info('Swagger UI mounted at /api-docs')
+
+app.use('/avatar', express.static(path.join(__dirname, 'uploads/avatar')))
+app.use('/storage', express.static(path.join(__dirname, 'uploads/public')))
+app.use('/storage/page', express.static(path.join(__dirname, 'uploads/page')))
+app.use('/storage/blog', express.static(path.join(__dirname, 'uploads/blog')))
 
 const routes = require('./routes')
 app.use('/api', routes)
-logger.info('API routes mounted at /api')
 
 connectDB()
   .then(() => {

@@ -50,12 +50,48 @@ class BlogListService {
 
   static async _fetchUserProfiles(accessToken) {
     try {
-      const { data: response } = await axios.get(`${process.env.IDP_PROVIDER_URL}/api/users`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+      const users = await models.Users.findAll({
+        attributes: ['user_id', 'username', 'user_status', 'created_at'],
       })
-      return response.data.reduce((acc, user) => {
+
+      const result = await Promise.all(
+        users.map(async (user) => {
+          const [profile, contact, userRole] = await Promise.all([
+            models.UsersProfile.findOne({
+              where: { user_id: user.user_id },
+              attributes: ['first_name', 'last_name', 'nick_name', 'gender', 'avatar_url'],
+            }),
+            models.UsersContact.findOne({
+              where: { user_id: user.user_id },
+              attributes: ['email', 'mobile_phone'],
+            }),
+            models.UserRole.findOne({
+              where: { user_id: user.user_id },
+              attributes: ['role_id'],
+            }),
+          ])
+
+          const role = userRole
+            ? await models.Roles.findOne({
+                where: { role_id: userRole.role_id },
+                attributes: ['role_id', 'name'],
+              })
+            : null
+
+          return {
+            ...user.toJSON(),
+            profile: profile ? profile.toJSON() : null,
+            contact: contact ? contact.toJSON() : null,
+            role: role
+              ? {
+                  role_id: role.role_id,
+                  name: role.name,
+                }
+              : null,
+          }
+        })
+      )
+      return result.reduce((acc, user) => {
         acc[user.user_id] = user.profile
         return acc
       }, {})

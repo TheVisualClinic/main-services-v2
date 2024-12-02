@@ -1,6 +1,19 @@
 const { sequelize } = require('../config/database.config')
 const logger = require('../utils/logger')
 
+// Auth Model
+const Users = require('./users.model')
+const RefreshToken = require('./refreshToken.model')
+const UsersProfile = require('./usersProfile.model')
+const UsersContact = require('./usersContact.model')
+const UserRole = require('./userRole.model')
+const UserPermission = require('./userPermission.model')
+const Roles = require('./roles.model')
+const Permissions = require('./permissions.model')
+const InviteStaff = require('./inviteStaff.model')
+const OTPHistory = require('./otpHistory.model')
+
+// Main Model
 const Category = require('./category.model')
 const Tag = require('./tag.model')
 const Blog = require('./blog.model')
@@ -246,6 +259,16 @@ const syncModels = async () => {
 module.exports = {
   sequelize,
   models: {
+    Users,
+    RefreshToken,
+    UsersProfile,
+    UsersContact,
+    UserRole,
+    UserPermission,
+    Roles,
+    Permissions,
+    InviteStaff,
+    OTPHistory,
     Category,
     Tag,
     Blog,

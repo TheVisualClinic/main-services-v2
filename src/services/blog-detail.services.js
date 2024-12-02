@@ -14,18 +14,13 @@ class BlogDetailService {
       }
 
       let created_by = null
-      try {
-        const { data: response } = await axios.get(
-          `${process.env.IDP_PROVIDER_URL}/api/users/by?id=${blog.user_id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        )
-        created_by = response.data.profile || null
-      } catch (error) {
-        throw error
+      const profile = await models.UsersProfile.findOne({
+        where: { user_id },
+        attributes: ['first_name', 'last_name', 'nick_name', 'gender', 'avatar_id', 'avatar_url'],
+      })
+
+      if (profile) {
+        created_by = profile
       }
 
       const tagList = await models.BlogTag.findAll({
@@ -315,19 +310,13 @@ class BlogDetailService {
       }
 
       let created_by = null
-      try {
-        const { data: response } = await axios.get(
-          `${process.env.IDP_PROVIDER_URL}/api/users/by?id=${blog.user_id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        )
-        created_by = response.data.profile || null
-      } catch (axiosError) {
-        console.error('Failed to fetch author details:', axiosError.message)
-        created_by = null
+      const profile = await models.UsersProfile.findOne({
+        where: { user_id },
+        attributes: ['first_name', 'last_name', 'nick_name', 'gender', 'avatar_id', 'avatar_url'],
+      })
+
+      if (profile) {
+        created_by = profile
       }
 
       return {

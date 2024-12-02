@@ -1,8 +1,8 @@
-const axios = require('axios')
+const jwt = require('jsonwebtoken')
 const ResponseHandle = require('../utils/responseHandle')
 const logger = require('../utils/logger')
 
-const verifyAccessToken = async (req, res, next) => {
+const verifyAccessToken = (req, res, next) => {
   if (process.env.API_GUARD === 'true') {
     const authHeader = req.headers.authorization
 
@@ -11,32 +11,17 @@ const verifyAccessToken = async (req, res, next) => {
       return ResponseHandle.error(res, 400, 'Access token is required')
     }
 
-    const accessToken = authHeader.split(' ')[1]
+    const token = authHeader.split(' ')[1]
 
     try {
-      const { data: response } = await axios.post(
-        `${process.env.IDP_PROVIDER_URL}/api/auth/tokens/verify`,
-        {
-          token: accessToken,
-        }
-      )
-
-      if (response && response.status === 'success') {
-        req.user = response.data
-        req.accessToken = accessToken
-        logger.info('Access token verified successfully', { userId: response.data.id })
-        next()
-      } else {
-        logger.warn('Access token verification failed', { response })
-        return ResponseHandle.error(
-          res,
-          401,
-          response.message || 'Access token verification failed'
-        )
-      }
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+      req.user = decoded
+      req.accessToken = token
+      logger.info('Access token verified successfully', { userId: decoded.id })
+      next()
     } catch (error) {
-      logger.error('Error during access token verification', { error: error.message })
-      return ResponseHandle.error(res, 401, 'Invalid access token', error)
+      logger.error('Error during token verification', { error: error.message })
+      return ResponseHandle.error(res, 401, 'Invalid access token', error.message)
     }
   } else {
     logger.debug('API Guard is disabled, skipping access token verification')
