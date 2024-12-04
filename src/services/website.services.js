@@ -773,6 +773,100 @@ class WebsiteService {
       throw error
     }
   }
+
+  static async getServiceDetailBySlug(slug) {
+    try {
+      const service = await models.Service.findOne({
+        where: { [Op.or]: [{ slug_th: slug }, { slug_en: slug }] },
+        attributes: ['id', 'header_image_url'],
+        include: [
+          {
+            model: models.ServiceContent,
+            as: 'service_content',
+            include: [
+              { model: models.ServiceTextContent, as: 'service_text_content' },
+              { model: models.ServiceImageContent, as: 'service_image_content' },
+            ],
+          },
+        ],
+        order: [[{ model: models.ServiceContent, as: 'service_content' }, 'order', 'ASC']],
+      })
+
+      if (!service) {
+        const error = new Error(`Service with slug "${slug}" not found`)
+        error.status = 404
+        throw error
+      }
+
+      let formattedContents = []
+      try {
+        formattedContents = service.service_content.map((content) => {
+          const formattedContent = {}
+          if (content.content_type === 'TEXT') {
+            formattedContent.text_th = content.service_text_content?.text_th || null
+            formattedContent.text_en = content.service_text_content?.text_en || null
+            formattedContent.type = content.service_text_content?.type || null
+          } else if (
+            content.content_type === 'IMAGE' &&
+            content.service_image_content?.type === 'image'
+          ) {
+            formattedContent.image_url = content.service_image_content?.image_url || null
+            formattedContent.alt_text_th = content.service_image_content?.alt_text_th || null
+            formattedContent.alt_text_en = content.service_image_content?.alt_text_en || null
+            formattedContent.type = content.service_image_content?.type || null
+          } else if (
+            content.content_type === 'IMAGE' &&
+            content.service_image_content?.type === 'image-2'
+          ) {
+            formattedContent.image_url = content.service_image_content?.image_url || null
+            formattedContent.alt_text_th = content.service_image_content?.alt_text_th || null
+            formattedContent.alt_text_en = content.service_image_content?.alt_text_en || null
+            formattedContent.image_2_url = content.service_image_content?.image_2_url || null
+            formattedContent.alt_2_text_th = content.service_image_content?.alt_2_text_th || null
+            formattedContent.alt_2_text_en = content.service_image_content?.alt_2_text_en || null
+            formattedContent.type = content.service_image_content?.type || null
+          } else if (
+            content.content_type === 'IMAGE' &&
+            content.service_image_content?.type === 'image-3'
+          ) {
+            formattedContent.image_url = content.service_image_content?.image_url || null
+            formattedContent.alt_text_th = content.service_image_content?.alt_text_th || null
+            formattedContent.alt_text_en = content.service_image_content?.alt_text_en || null
+            formattedContent.image_2_url = content.service_image_content?.image_2_url || null
+            formattedContent.alt_2_text_th = content.service_image_content?.alt_2_text_th || null
+            formattedContent.alt_2_text_en = content.service_image_content?.alt_2_text_en || null
+            formattedContent.image_3_url = content.service_image_content?.image_3_url || null
+            formattedContent.alt_3_text_th = content.service_image_content?.alt_3_text_th || null
+            formattedContent.alt_3_text_en = content.service_image_content?.alt_3_text_en || null
+            formattedContent.type = content.service_image_content?.type || null
+          }
+          return formattedContent
+        })
+      } catch (error) {
+        throw error
+      }
+
+      const faqs = await models.PageServiceFaq.findAll({
+        attributes: ['faq_order', 'title_th', 'title_en', 'description_th', 'description_en'],
+        where: {
+          service_id: service.id,
+        },
+        order: [['faq_order', 'ASC']],
+      })
+
+      return {
+        id: service.id,
+        service_name_th: service.service_name_th,
+        service_name_en: service.service_name_en,
+        header_image_id: service.header_image_id,
+        header_image_url: service.header_image_url,
+        contents: formattedContents,
+        faq_list: faqs,
+      }
+    } catch (error) {
+      throw error
+    }
+  }
 }
 
 module.exports = WebsiteService

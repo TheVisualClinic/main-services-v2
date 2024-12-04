@@ -340,6 +340,24 @@ class WebsiteController {
       )
     }
   }
+
+  static async getServiceDetailBySlug(req, res) {
+    try {
+      const { slug } = req.body
+      if (!slug) {
+        return ResponseHandle.error(res, 400, 'Slug is required')
+      }
+
+      const result = await WebsiteService.getServiceDetailBySlug(slug)
+      return ResponseHandle.success(res, result, 'Successfully retrieved the data')
+    } catch (error) {
+      return ResponseHandle.error(
+        res,
+        error.status || 500,
+        error.message || 'Internal Server Error'
+      )
+    }
+  }
 }
 
 module.exports = WebsiteController

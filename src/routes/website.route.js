@@ -667,4 +667,38 @@ router.get('/page/medical-team', WebsiteController.getMedicalTeamPageData)
  */
 router.get('/page/doctor-detail-list', WebsiteController.getDoctorDetailList)
 
+/**
+ * @swagger
+ * /api/v1/website/page/service/detail:
+ *   post:
+ *     summary: Retrieve blog detail by slug
+ *     description: Fetch blog detail using the provided slug
+ *     tags: [Website Services]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               slug:
+ *                 type: string
+ *                 description: The slug of the blog
+ *                 example: บางกอก
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the blog detail
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       404:
+ *         description: Blog not found
+ *       500:
+ *         description: Internal Server Error
+ */
+router.post('/page/service/detail', WebsiteController.getServiceDetailBySlug)
+
 module.exports = router
