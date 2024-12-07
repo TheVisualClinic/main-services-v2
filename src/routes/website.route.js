@@ -701,4 +701,50 @@ router.get('/page/doctor-detail-list', WebsiteController.getDoctorDetailList)
  */
 router.post('/page/service/detail', WebsiteController.getServiceDetailBySlug)
 
+/**
+ * @swagger
+ * /api/v1/website/sitemap/services:
+ *   get:
+ *     summary: xxxxx
+ *     description: xxxxxxxxx
+ *     tags: [Website Services]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the review list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *       404:
+ *         description: Page Review not found
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/sitemap/services', WebsiteController.getServicesSitemap)
+
+/**
+ * @swagger
+ * /api/v1/website/sitemap/blogs:
+ *   get:
+ *     summary: xxxxx
+ *     description: xxxxxxxxx
+ *     tags: [Website Services]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the review list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *       404:
+ *         description: Page Review not found
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/sitemap/blogs', WebsiteController.getBlogsSitemap)
+
 module.exports = router

@@ -867,6 +867,36 @@ class WebsiteService {
       throw error
     }
   }
+
+  static async getServicesSitemap() {
+    try {
+      const services = await models.Service.findAll({
+        where: {
+          status: 'public',
+        },
+        attributes: ['slug_th', 'slug_en', 'public_at'],
+        order: [['id', 'DESC']],
+      })
+      return services
+    } catch (error) {
+      throw error
+    }
+  }
+
+  static async getBlogsSitemap() {
+    try {
+      const blogs = await models.Blog.findAll({
+        where: {
+          status: 'public',
+        },
+        attributes: ['slug_th', 'slug_en', 'public_at'],
+        order: [['id', 'DESC']],
+      })
+      return blogs
+    } catch (error) {
+      throw error
+    }
+  }
 }
 
 module.exports = WebsiteService

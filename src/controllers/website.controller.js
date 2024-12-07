@@ -358,6 +358,32 @@ class WebsiteController {
       )
     }
   }
+
+  static async getServicesSitemap(req, res) {
+    try {
+      const result = await WebsiteService.getServicesSitemap()
+      return ResponseHandle.success(res, result, 'Successfully retrieved the data')
+    } catch (error) {
+      return ResponseHandle.error(
+        res,
+        error.status || 500,
+        error.message || 'Internal Server Error'
+      )
+    }
+  }
+
+  static async getBlogsSitemap(req, res) {
+    try {
+      const result = await WebsiteService.getBlogsSitemap()
+      return ResponseHandle.success(res, result, 'Successfully retrieved the data')
+    } catch (error) {
+      return ResponseHandle.error(
+        res,
+        error.status || 500,
+        error.message || 'Internal Server Error'
+      )
+    }
+  }
 }
 
 module.exports = WebsiteController
