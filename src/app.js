@@ -32,6 +32,11 @@ app.use('/storage/page', express.static(path.join(__dirname, 'uploads/page')))
 app.use('/storage/blog', express.static(path.join(__dirname, 'uploads/blog')))
 
 const routes = require('./routes')
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'The Visual Clinic API',
+  })
+})
 app.use('/api', routes)
 
 connectDB()
