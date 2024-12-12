@@ -194,7 +194,6 @@ class WebsiteService {
           },
         ],
         order: [['id', 'DESC']],
-        limit: 5,
       })
 
       return result
